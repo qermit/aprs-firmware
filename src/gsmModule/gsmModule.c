@@ -62,7 +62,7 @@ void GSM_Init(void)
 {
 	GPIO_Config();
 	UART_FullModemConfig();
-
+	return;
 	prepareServerConf();
 
 	//GSM_Switch(DISABLE);

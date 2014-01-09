@@ -24,8 +24,11 @@ char mesageID [5];
 char* idPtr;
 uint8_t i = 0;
 delay_ms(100);
+
+GpsInitialization();
+
 //UART_Send(LPC_UART0, "$PMTK314,0,0,0,5,0,0,0,0,1,1,1,1,1,1,1,1,1*2C\r\n", 47, BLOCKING );
-UART_Send(LPC_UART0, "$PMTK314,0,0,0,5,5,5,0,0,1,1,1,1,1,1,1,1,1*2C\r\n", 47, BLOCKING );
+UART_Send(LPC_UART0,(uint8_t *) "$PMTK314,0,0,0,5,5,5,0,0,1,1,1,1,1,1,1,1,1*2C\r\n", 47, BLOCKING );
 while(UART_CheckBusy(LPC_UART0));
 NVIC_EnableIRQ(UART0_IRQn);
 

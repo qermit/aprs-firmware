@@ -55,7 +55,7 @@ void DAC_Init(LPC_DAC_TypeDef *DACx)
 {
 	CHECK_PARAM(PARAM_DACx(DACx));
 	/* Set default clock divider for DAC */
-	// CLKPWR_SetPCLKDiv (CLKPWR_PCLKSEL_DAC, CLKPWR_PCLKSEL_CCLK_DIV_4);
+	LPC_SC->PCLKSEL0 |= 0x3 << 22;
 	//Set maximum current output
 	DAC_SetBias(LPC_DAC,DAC_MAX_CURRENT_700uA);
 }
