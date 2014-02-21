@@ -118,6 +118,7 @@ int main(void) {
 	xTaskCreate( vGpsTask, ( signed portCHAR * ) "gpsTask", USERTASK_STACK_SIZE, NULL, 3, &xGpsTaskHandle );
 #endif
 
+	// To tak naprawde jest task od DACa
 	xTaskCreate( vLedTask, ( signed portCHAR * ) "Led", USERTASK_STACK_SIZE, NULL, tskIDLE_PRIORITY, NULL );
 
 	//	/*

@@ -42,7 +42,11 @@ static char gpsRxBuffer [ NMEA_MESSAGE_MAX_LENGTH ];
 /* Private function prototypes -----------------------------------------------*/
 static void UART_Config(void);
 
-static char* getFieldPtr(uint8_t fieldNr);
+
+#define MAX_TOKEN_TABLE_COUNT 20
+static char *token_table[MAX_TOKEN_TABLE_COUNT];
+static int token_count = 0;
+
 
 
 
@@ -51,6 +55,8 @@ void GpsInitialization(void)
 	GPIO_SetDir(GPIO0, 0x01<<gpsEnPin, OUTPUT);
 	UART_Config();
 
+	token_count = 0;
+	//memset(token_table,0,);
 }
 
 static void UART_Config(void)
@@ -118,43 +124,87 @@ static void UART_Config(void)
 
 }
 
+
+char * gps_getToken(uint8_t i) {
+	if (i>=token_count) {
+		return 0;
+	} else {
+		return token_table[i];
+	}
+}
+static int8_t processing_buffer = -1;
+int8_t gpsProcessingBuffer(){
+	return processing_buffer;
+}
+
+void gpsSetProcessingBuffer(int8_t i){
+	processing_buffer = i;
+}
+
+void gps_tokenize_input() {
+	char * ptr = getMessageIdPtr();
+	token_count = 1;
+	token_table[0] = ptr;
+	int counter = 0;
+	while(*ptr != '*' && *ptr != '\r' && counter < NMEA_MESSAGE_MAX_LENGTH){
+		if (*ptr == ',') {
+			*ptr = 0;
+			if (token_count >= MAX_TOKEN_TABLE_COUNT) {
+				break;
+			} else {
+				token_table[token_count]=ptr+1;
+			}
+			token_count++;
+		}
+		ptr++;
+		counter++;
+	}
+	*ptr=0;
+}
+
+int gps_tokens(){
+	return token_count;
+}
+
+
+
 void UART0_IRQHandler(void)
 {
 	char newData;
 
+
 	newData = (char)UART_ReceiveByte(UARTx);
 
-	if(newData == '$')
-	{
-		receivingGpsFrame = TRUE;
-		gpsRxBuffer[dataCounter++] = newData;
-	}
-	else if ( (receivingGpsFrame) &&  (dataCounter <  NMEA_MESSAGE_MAX_LENGTH) )
-	{
-		if(newData != '\n')
+	if (processing_buffer== -1) {
+		if(newData == '$')
 		{
+			receivingGpsFrame = TRUE;
 			gpsRxBuffer[dataCounter++] = newData;
 		}
-		else
+		else if ( (receivingGpsFrame) &&  (dataCounter <  NMEA_MESSAGE_MAX_LENGTH) )
 		{
-			gpsRxBuffer[dataCounter++] = newData;
+			if(newData != '\n')
+			{
+				gpsRxBuffer[dataCounter++] = newData;
+			}
+			else
+			{
+				gpsRxBuffer[dataCounter++] = newData;
+				dataCounter = 0;
+				//static portBASE_TYPE xHigherPriorityTaskWoken;
+				//xHigherPriorityTaskWoken = pdFALSE;
+				//xSemaphoreGiveFromISR(xSemaphoreGPS, &xHigherPriorityTaskWoken);
+				xSemaphoreGive(xSemaphoreGPS);
+				receivingGpsFrame = FALSE;
+			}
+		}
+		else if ( (receivingGpsFrame) && (dataCounter >= NMEA_MESSAGE_MAX_LENGTH) )
+		{
 			dataCounter = 0;
-			//static portBASE_TYPE xHigherPriorityTaskWoken;
-			//xHigherPriorityTaskWoken = pdFALSE;
-			//xSemaphoreGiveFromISR(xSemaphoreGPS, &xHigherPriorityTaskWoken);
-			xSemaphoreGive(xSemaphoreGPS);
 			receivingGpsFrame = FALSE;
 		}
 	}
-	else if ( (receivingGpsFrame) && (dataCounter >= NMEA_MESSAGE_MAX_LENGTH) )
-	{
-		dataCounter = 0;
-		receivingGpsFrame = FALSE;
-	}
-
-  NVIC_ClearPendingIRQ(UART0_IRQn);
-
-
+	NVIC_ClearPendingIRQ(UART0_IRQn);
 }
 
 
@@ -202,10 +252,10 @@ char* getMessageIdPtr(void)
  *  param:		fieldNr
  *  return:		pointer to first field component;
  */
-static char* getFieldPtr(uint8_t fieldNr)
+char* getFieldPtr(uint8_t fieldNr)
 {
 	uint8_t comaCount = 0;
-	uint8_t i = 0;
+
 	char * ptr = gpsRxBuffer;
 
 	while(comaCount != fieldNr)

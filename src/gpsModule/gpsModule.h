@@ -39,6 +39,13 @@ volatile NmeaGgaMessage_T lastReceivedGgaMessage;
 
 
 void GpsInitialization(void);
+
+char* getFieldPtr(uint8_t fieldNr);
+
+char * gps_getToken(uint8_t i);
+void gps_tokenize_input();
+int gps_tokens();
+
 void UART0_IRQHandler(void);
 void parseGgaMessage(void);
 uint8_t checkFixPresence(void);
@@ -46,7 +53,8 @@ char* getMessageIdPtr(void);
 char* getGpsPosition(void);
 char* getGpsTime(void);
 
-
+int8_t gpsProcessingBuffer();
+void gpsSetProcessingBuffer(int8_t i);
 
 /* Private functions */
 
