@@ -11,10 +11,17 @@
 #ifndef TASKGPSLOCALIZATION_H_
 #define TASKGPSLOCALIZATION_H_
 
-xSemaphoreHandle xSemaphoreGPS;
-xTaskHandle xGpsTaskHandle;
 
+/**
+ * @brief vGpsTask
+ * @param pvParameters
+ */
 void vGpsTask(void *pvParameters);
+
+/**
+ * @brief vGpsTest
+ * @param pvParameters
+ */
 void vGpsTest(void *pvParameters);
 
 #endif /* TASKGPSLOCALIZATION_H_ */

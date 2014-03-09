@@ -57,8 +57,8 @@ static void setupHardware(void) {
 	GSM_Init();
 #endif
 
-	sensorControlInit();
-	setActiveChannel(1);
+//	sensorControlInit();
+//	setActiveChannel(1);
 #ifdef USE_MODULE_SENSORS
 	//DS18B20_Init();
 	initSHT21();
@@ -111,15 +111,13 @@ int main(void) {
 	setupHardware();
 	delay_ms(1000);
 
-	vSemaphoreCreateBinary(xSemaphoreGPS);
-	xSemaphoreTake(xSemaphoreGPS,0);
-
 #ifdef USE_MODULE_GPS
-	xTaskCreate( vGpsTask, ( signed portCHAR * ) "gpsTask", USERTASK_STACK_SIZE, NULL, 3, &xGpsTaskHandle );
+	xTaskHandle xGpsTaskHandle;
+	//xTaskCreate( vGpsTask, ( signed portCHAR * ) "gpsTask", USERTASK_STACK_SIZE, NULL, 3, &xGpsTaskHandle );
 #endif
 
 	// To tak naprawde jest task od DACa
-	xTaskCreate( vLedTask, ( signed portCHAR * ) "Led", USERTASK_STACK_SIZE, NULL, tskIDLE_PRIORITY, NULL );
+	//xTaskCreate( vLedTask, ( signed portCHAR * ) "Led", USERTASK_STACK_SIZE, NULL, tskIDLE_PRIORITY, NULL );
 
 	//	/*
 	//	 * Start the tasks defined
