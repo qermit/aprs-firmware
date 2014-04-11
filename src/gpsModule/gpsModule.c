@@ -115,20 +115,26 @@ static void UART_Config(void)
 	delay_ms(20);
 	GPIO_SetValue(GPIO0, 0x01<<gpsEnPin);
 	delay_ms(500);
-	UART_Send(UARTx, "$PMTK314,0,0,0,5,0,0,0,0,1,1,1,1,1,1,1,1,1*2C\r\n", 47, BLOCKING );
-	while(UART_CheckBusy(UARTx));
+//	UART_Send(UARTx, "$PMTK314,0,0,0,5,0,0,0,0,1,1,1,1,1,1,1,1,1*2C\r\n", 47, BLOCKING );
+//	while(UART_CheckBusy(UARTx));
 
 }
 
 
+volatile portBASE_TYPE xHigherPriorityTaskWoken = pdFALSE;
+
 void UART0_IRQHandler(void)
 {
 	char newData;
-	 portBASE_TYPE xHigherPriorityTaskWoken = pdFALSE;
 
-
+	xHigherPriorityTaskWoken = pdFALSE;
 	newData = (char)UART_ReceiveByte(UARTx);
 	xQueueSendFromISR( uart0_queue_id, &newData, &xHigherPriorityTaskWoken );
+	portEND_SWITCHING_ISR(xHigherPriorityTaskWoken);
+	//taskYIELD();
+    NVIC_ClearPendingIRQ(UART0_IRQn);
+
+	//NVIC_ClearPendingIRQ(UART0_IRQn);
 //
 //	if (processing_buffer== -1) {
 //		if(newData == '$')
@@ -159,7 +165,6 @@ void UART0_IRQHandler(void)
 //			receivingGpsFrame = FALSE;
 //		}
 //	}
-	NVIC_ClearPendingIRQ(UART0_IRQn);
 }
 
 

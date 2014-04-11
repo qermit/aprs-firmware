@@ -36,6 +36,8 @@ void __error__(char *pcFilename, unsigned long ulLine) {
 
 #define DMA_SIZE                1
 
+/* The prototype shows it is a naked function - in effect this is just an
+assembly function. */
 
 
 static void allPinsAsOut(void)
@@ -110,16 +112,12 @@ int main(void) {
 
 	setupHardware();
 	delay_ms(1000);
-
-	vSemaphoreCreateBinary(xSemaphoreGPS);
-	xSemaphoreTake(xSemaphoreGPS,0);
-
 #ifdef USE_MODULE_GPS
 	xTaskCreate( vGpsTask, ( signed portCHAR * ) "gpsTask", USERTASK_STACK_SIZE, NULL, 3, &xGpsTaskHandle );
 #endif
 
 	// To tak naprawde jest task od DACa
-	xTaskCreate( vLedTask, ( signed portCHAR * ) "Led", USERTASK_STACK_SIZE, NULL, tskIDLE_PRIORITY, NULL );
+	xTaskCreate( vLedTask, ( signed portCHAR * ) "DAC", USERTASK_STACK_SIZE, NULL, tskIDLE_PRIORITY, NULL );
 
 	//	/*
 	//	 * Start the tasks defined

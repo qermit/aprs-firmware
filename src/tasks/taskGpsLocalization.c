@@ -28,6 +28,7 @@ char recieve_buffer[NMEA_MESSAGE_MAX_LENGTH];
 uint8_t recieve_buffer_pos = 0;
 uint8_t is_nmea_message = 0;
 uint8_t token_count = 0;
+char new_byte;
 
 
 void parseGgaMessage(void)
@@ -53,7 +54,7 @@ void parseGgaMessage(void)
 void vGpsTask(void *pvParameters)
 {
 	delay_ms(100);
-	gpsQueue = xQueueCreate(NMEA_MESSAGE_MAX_LENGTH, sizeof(char));
+	gpsQueue = xQueueCreate(NMEA_MESSAGE_MAX_LENGTH/4, sizeof(char));
 	if (gpsQueue == 0) {
 		return;
 	}
@@ -71,14 +72,14 @@ void vGpsTask(void *pvParameters)
 	NVIC_EnableIRQ(UART0_IRQn);
 
 
-	char new_byte;
-
 	while(1)
 	{
 		if (xQueueReceive(gpsQueue,&new_byte,10) == pdTRUE) {
 			if (new_byte == '$') {
 				is_nmea_message = 1;
 				token_count = 1;
+				memset(token_table, 0, sizeof(char *) * MAX_TOKEN_TABLE_COUNT);
+				memset(recieve_buffer, 0, sizeof(char) * NMEA_MESSAGE_MAX_LENGTH);
 				recieve_buffer[0] = '$';
 				recieve_buffer_pos = 1;
 				token_table[0] = recieve_buffer;
@@ -86,15 +87,26 @@ void vGpsTask(void *pvParameters)
 			}
 			if (is_nmea_message == 0) continue;
 
+
 			if(new_byte == '\n' || new_byte == '\r' ||
 					new_byte == '*' || new_byte == ',') {
-				recieve_buffer[recieve_buffer_pos++]=0;
-				token_table[token_count++] = &(recieve_buffer[recieve_buffer_pos]);
+				if (recieve_buffer_pos<NMEA_MESSAGE_MAX_LENGTH) {
+					recieve_buffer[recieve_buffer_pos++]=0;
+					if (token_count < MAX_TOKEN_TABLE_COUNT)
+						token_table[token_count++] = &(recieve_buffer[recieve_buffer_pos]);
+				}
 			} else {
-				recieve_buffer[recieve_buffer_pos++]=new_byte;
+				if (recieve_buffer_pos < NMEA_MESSAGE_MAX_LENGTH)
+					recieve_buffer[recieve_buffer_pos++]=new_byte;
 			}
 			if(new_byte == '\r') {
 				is_nmea_message = 0;
+				if(recieve_buffer_pos == 0){
+					__NOP();
+					continue;
+
+				}
+
 
 				if( strcmp(token_table[0], "$GPGGA") == 0)
 				{
@@ -105,12 +117,6 @@ void vGpsTask(void *pvParameters)
 					if (atoi(token_table[6]) != 0) {
 						parseGgaMessage();
 					}
-					asm("nop");
-
-					//			if(checkFixPresence()!=0)
-					//			{
-					//				parseGgaMessage();
-					//			}
 				} else if (strcmp(token_table[0], "$GPRMC")==0) {
 					//$GPRMC,081253.000,A,5204.8527,N,02101.6226,E,0.04,0.00,210214,,,A*6A
 					//$GPRMC,082223.000,A,5204.8527,N,02101.6234,E,0.33,175.46,210214,,,A*68
@@ -143,6 +149,9 @@ void vGpsTask(void *pvParameters)
 					if (strncmp(test, "00", 2)!= 0){
 						asm("nop");
 					}
+
+				} else if (strcmp(token_table[0], "$GPGLL") == 0) {
+					asm("nop");
 				} else if (strcmp(token_table[0], "$PMTK011")==0) {
 					asm("nop");
 				} else if (strcmp(token_table[0], "$PMTK010")==0) {
